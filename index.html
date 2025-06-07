@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Live WM-Stand Rechner Formel 1</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f4f4f4;
+            color: #333;
+            line-height: 1.6;
+        }
+        .container {
+            max-width: 900px;
+            margin: auto;
+            background: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        h1, h2 {
+            color: #d90000; /* Ferrari Red for F1 feel */
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+        th, td {
+            padding: 10px 12px;
+            border: 1px solid #ddd;
+            text-align: left;
+        }
+        th {
+            background-color: #e0e0e0;
+            font-weight: bold;
+        }
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        input[type="number"] {
+            width: 60px;
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        button {
+            display: block;
+            width: 200px;
+            margin: 20px auto;
+            padding: 12px 20px;
+            background-color: #d90000;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+        button:hover {
+            background-color: #b00000;
+        }
+        .info-text {
+            text-align: center;
+            font-size: 0.9em;
+            color: #555;
+            margin-bottom: 20px;
+        }
+        #outputTable th:nth-child(1), #outputTable td:nth-child(1) { width: 10%; } /* Platz */
+        #outputTable th:nth-child(2), #outputTable td:nth-child(2) { width: 30%; } /* Fahrer */
+        #outputTable th:nth-child(3), #outputTable td:nth-child(3) { width: 30%; } /* Auto */
+        #outputTable th:nth-child(4), #outputTable td:nth-child(4) { width: 15%; } /* Punkte */
+        #outputTable th:nth-child(5), #outputTable td:nth-child(5) { width: 15%; } /* Veränderung */
+
+        .change-positive { color: green; font-weight: bold; }
+        .change-negative { color: red; font-weight: bold; }
+        .change-neutral { color: gray; }
+
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Live Formel 1 WM-Stand Rechner</h1>
+        <p class="info-text">
+            Gib die Rennplatzierungen der Fahrer ein und klicke auf "WM-Stand berechnen".<br>
+            Punktevergabe: 1.=25, 2.=18, 3.=15, 4.=12, 5.=10, 6.=8, 7.=6, 8.=4, 9.=2, 10.=1.
+        </p>
+
+        <h2>Rennplatzierungen eingeben</h2>
+        <table id="inputTable">
+            <thead>
+                <tr>
+                    <th>Akt. WM-Platz</th>
+                    <th>Fahrer</th>
+                    <th>Auto</th>
+                    <th>Akt. WM-Punkte</th>
+                    <th>Rennplatzierung</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Wird per JavaScript gefüllt -->
+            </tbody>
+        </table>
+
+        <button onclick="calculateStandings()">WM-Stand berechnen</button>
+
+        <h2>Neuer WM-Stand</h2>
+        <table id="outputTable">
+            <thead>
+                <tr>
+                    <th>Neuer Platz</th>
+                    <th>Fahrer</th>
+                    <th>Auto</th>
+                    <th>Neue Punkte</th>
+                    <th>+/-</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Wird per JavaScript gefüllt -->
+            </tbody>
+        </table>
+    </div>
+
+    <script>
+        const initialStandings = [
+            { rank: 1, name: "Oscar Piastri", team: "McLaren", points: 186 },
+            { rank: 2, name: "Lando Norris", team: "McLaren", points: 176 },
+            { rank: 3, name: "Max Verstappen", team: "Red Bull", points: 137 },
+            { rank: 4, name: "George Russell", team: "Mercedes", points: 111 },
+            { rank: 5, name: "Charles Leclerc", team: "Ferrari", points: 94 },
+            { rank: 6, name: "Lewis Hamilton", team: "Ferrari", points: 71 },
+            { rank: 7, name: "Kimi Antonelli", team: "Mercedes", points: 48 },
+            { rank: 8, name: "Alex Albon", team: "Williams", points: 42 },
+            { rank: 9, name: "Isack Hadjar", team: "Racing Bulls", points: 21 },
+            { rank: 10, name: "Esteban Ocon", team: "Haas", points: 20 },
+            { rank: 11, name: "Nico Hülkenberg", team: "Sauber", points: 16 },
+            { rank: 12, name: "Lance Stroll", team: "Aston Martin", points: 14 },
+            { rank: 13, name: "Carlos Sainz", team: "Williams", points: 12 },
+            { rank: 14, name: "Pierre Gasly", team: "Alpine", points: 11 },
+            { rank: 15, name: "Yuki Tsunoda", team: "Red Bull / Racing Bulls", points: 10 },
+            { rank: 16, name: "Oliver Bearman", team: "Haas", points: 6 },
+            { rank: 17, name: "Liam Lawson", team: "Red Bull / Racing Bulls", points: 4 },
+            { rank: 18, name: "Fernando Alonso", team: "Aston Martin", points: 2 },
+            { rank: 19, name: "Jack Doohan", team: "Alpine", points: 0 },
+            { rank: 20, name: "Gabriel Bortoletto", team: "Sauber", points: 0 },
+            { rank: 21, name: "Franco Colapinto", team: "Alpine", points: 0 }
+        ];
+
+        const pointsSystem = {
+            1: 25, 2: 18, 3: 15, 4: 12, 5: 10, 6: 8, 7: 6, 8: 4, 9: 2, 10: 1
+        };
+
+        function populateInputTable() {
+            const tbody = document.getElementById('inputTable').getElementsByTagName('tbody')[0];
+            tbody.innerHTML = ''; // Clear existing rows
+
+            initialStandings.forEach((driver, index) => {
+                const row = tbody.insertRow();
+                row.insertCell().textContent = driver.rank + ".";
+                row.insertCell().textContent = driver.name;
+                row.insertCell().textContent = driver.team;
+                row.insertCell().textContent = driver.points;
+                
+                const inputCell = row.insertCell();
+                const input = document.createElement('input');
+                input.type = 'number';
+                input.min = '1';
+                input.id = `driver_pos_${index}`;
+                input.dataset.driverIndex = index; // Store index for later retrieval
+                inputCell.appendChild(input);
+            });
+        }
+
+        function calculateStandings() {
+            const currentCalculatedStandings = initialStandings.map((driver, index) => {
+                const racePositionInput = document.getElementById(`driver_pos_${index}`);
+                const racePosition = racePositionInput ? parseInt(racePositionInput.value) : 0;
+                
+                let racePoints = 0;
+                if (racePosition && pointsSystem[racePosition]) {
+                    racePoints = pointsSystem[racePosition];
+                }
+                
+                return {
+                    ...driver, // copy existing driver data
+                    originalRank: driver.rank, // store original rank for change calculation
+                    racePosition: racePosition || null, // store entered race position
+                    racePoints: racePoints,
+                    newPoints: driver.points + racePoints
+                };
+            });
+
+            // Sort by new points (descending), then by original points (descending) as a tie-breaker
+            // then by original rank (ascending) as a further tie-breaker.
+            currentCalculatedStandings.sort((a, b) => {
+                if (b.newPoints !== a.newPoints) {
+                    return b.newPoints - a.newPoints;
+                }
+                if (b.points !== a.points) { // Tie on new points, use original points
+                    return b.points - a.points;
+                }
+                return a.originalRank - b.originalRank; // Further tie-breaker: original rank
+            });
+            
+            displayNewStandings(currentCalculatedStandings);
+        }
+
+        function displayNewStandings(calculatedStandings) {
+            const tbody = document.getElementById('outputTable').getElementsByTagName('tbody')[0];
+            tbody.innerHTML = ''; // Clear existing rows
+
+            calculatedStandings.forEach((driver, index) => {
+                const newRank = index + 1;
+                const rankChange = driver.originalRank - newRank;
+
+                let changeSymbol = '';
+                let changeClass = 'change-neutral';
+
+                if (rankChange > 0) {
+                    changeSymbol = `+${rankChange} ▲`;
+                    changeClass = 'change-positive';
+                } else if (rankChange < 0) {
+                    changeSymbol = `${rankChange} ▼`;
+                    changeClass = 'change-negative';
+                } else {
+                    changeSymbol = '▬';
+                }
+
+
+                const row = tbody.insertRow();
+                row.insertCell().textContent = newRank + ".";
+                row.insertCell().textContent = driver.name;
+                row.insertCell().textContent = driver.team;
+                row.insertCell().textContent = driver.newPoints;
+                
+                const changeCell = row.insertCell();
+                changeCell.textContent = changeSymbol;
+                changeCell.className = changeClass;
+            });
+        }
+
+        // Initial population
+        window.onload = () => {
+            populateInputTable();
+            // Optional: initial "calculation" to show current standings in output table
+            calculateStandings(); 
+        };
+    </script>
+</body>
+</html>
